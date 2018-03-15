@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@google/maps": "^0.4.5",
+    "dark-sky": "^1.1.2",
+    "suncalc": "^1.8.0"
+  }
+}
