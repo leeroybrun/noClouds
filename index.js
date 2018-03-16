@@ -1,5 +1,7 @@
 const creds = require('./credentials.json');
 
+const moment = require('moment');
+
 const googleMapsClient = require('@google/maps').createClient({
   Promise: Promise,
   key: creds.googleMaps
@@ -29,15 +31,24 @@ class NoClouds {
   }
 
   async getWeatherForHour(date, pos) {
+    const startOfDay = moment(date).utc().startOf('day');
+    const startOfNextDay = moment(date).utc().add(1, 'days').startOf('day');
     const weather = await this.darkSkyWeather(pos);
 
-    weather.hourly.data.forEach((hourly) => {
-      console.log(new Date(hourly.time*1000));
-    })
+    console.log(weather);
+
+    const hourly = weather.hourly.data.filter((hourly) => {
+      const time = hourly.time * 1000;
+      return time == startOfDay.valueOf() || time == startOfNextDay.valueOf();
+    });
+
+    console.log(hourly);
   }
 
   getSunCalc(date, pos) {
-    return SunCalc.getTimes(new Date(), pos.lat, pos.lng);
+    // Because of https://github.com/mourner/suncalc/issues/11
+    const midDay = moment(date).utc().startOf('day').add(12, 'hours').toDate();
+    return SunCalc.getTimes(midDay, pos.lat, pos.lng);
   }
 
   getSunrise(date, pos) {
@@ -47,11 +58,12 @@ class NoClouds {
 
 const noClouds = new NoClouds();
 
-var tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate()+1);
+var tomorrow = moment().utc().add(1, 'days').startOf('day').toDate();
 
 noClouds.geocode('Chardonne, Switzerland').then(pos => {
   const sunrise = noClouds.getSunrise(tomorrow, pos);
+
+  console.log(sunrise);
 
   noClouds.getWeatherForHour(sunrise, pos);
 }).catch((r) => {
